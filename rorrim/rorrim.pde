@@ -8,54 +8,47 @@ import org.openkinect.processing.*;
 Kinect kinect;
 
 float deg;
-
-boolean ir = false;
-boolean colorDepth = false;
-boolean mirror = false;
+int scale = 3;
 
 void setup() {
-  size(1280, 520);
+  size(1920, 1440);
   kinect = new Kinect(this);
+  background(0);
+  
   kinect.initDepth();
   kinect.initVideo();
-  //kinect.enableIR(ir);
-  kinect.enableColorDepth(colorDepth);
 
-  deg = kinect.getTilt();
-  // kinect.tilt(deg);
+  kinect.enableColorDepth(false);
+  kinect.enableMirror(true);
+  colorMode(HSB, 255);
+  
+  
 }
 
+//Boolean isBgSet = false;
 
 void draw() {
-  background(0);
-  image(kinect.getVideoImage(), 0, 0);
-  image(kinect.getDepthImage(), 640, 0);
-  fill(255);
-  text(
-    "Press 'i' to enable/disable between video image and IR image,  " +
-    "Press 'c' to enable/disable between color depth and gray scale depth,  " +
-    "Press 'm' to enable/diable mirror mode, "+
-    "UP and DOWN to tilt camera   " +
-    "Framerate: " + int(frameRate), 10, 515);
-}
-
-void keyPressed() {
-  if (key == 'i') {
-    ir = !ir;
-    kinect.enableIR(ir);
-  } else if (key == 'c') {
-    colorDepth = !colorDepth;
-    kinect.enableColorDepth(colorDepth);
-  }else if(key == 'm'){
-    mirror = !mirror;
-    kinect.enableMirror(mirror);
-  } else if (key == CODED) {
-    if (keyCode == UP) {
-      deg++;
-    } else if (keyCode == DOWN) {
-      deg--;
+  fill(0,0,0,10);
+  rect(0,0,width,height);
+  
+  PImage img = kinect.getDepthImage();
+  
+  img.filter(POSTERIZE, 255);
+  img.filter(BLUR, 1);
+  
+  int tileW = 2;
+  for (int x = 0; x < img.width; x+=tileW)
+    for (int y = 0; y < img.height; y+=tileW) {
+      int index = x + y * img.width;
+      float depth = (red(img.pixels[index]) - 140) / 115;
+      if (depth > 1) depth = 1;
+            
+      if (depth < 0.15) {
+        continue;  
+      }
+      
+      color c = color(depth * 255 * 3, 126, 255);
+      fill(c);
+      rect(x * scale, y * scale, tileW * scale, tileW * scale);
     }
-    deg = constrain(deg, 0, 30);
-    kinect.setTilt(deg);
-  }
 }
